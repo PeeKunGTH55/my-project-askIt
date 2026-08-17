@@ -6,50 +6,17 @@ import CategoriesRow from "../components/CategoriesRow";
 
 import supabase from "../lib/supabaseClient";
 
-function Home({ searchTerm }) { // รับ props ที่เป็น searchTerm จาก _app.js
+function Home() {
   const [topCategories, setTopCategories] = useState([]); // สร้าง state สำหรับเก็บหมวดหมู่ยอดนิยม
 
   useEffect(() => {
     const fetchTopCategories = async () => {
-      // ดึงข้อมูลโพสต์ทั้งหมด พร้อม categories_id
-      const { data: posts, error: postError } = await supabase
-        .from("post")
-        .select("id, categories_id");
-
-      if (postError) {
-        console.error("Error fetching posts:", postError); // แสดง error ถ้ามีปัญหา
-        return;
-      }
-
-      // นับจำนวนโพสต์ในแต่ละ categories_id
-      const countMap = {};
-      posts.forEach((post) => {
-        countMap[post.categories_id] = (countMap[post.categories_id] || 0) + 1;
+      const { data, error } = await supabase.rpc("top_categories", {
+        result_limit: 5,
       });
 
-      // เรียงตามจำนวนโพสต์จากมากไปน้อย และเก็บแค่ 5 อันดับแรก
-      const sortedIds = Object.entries(countMap)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([id]) => id);
-
-      // ดึงข้อมูล categories ที่ตรงกับ id ใน sortedIds
-      const { data: Categories, error: subError } = await supabase
-        .from("categories")
-        .select("*")
-        .in("id", sortedIds);
-
-      if (subError) {
-        console.error("Error fetching categories:", subError); // แสดง error ถ้าโหลด categories ไม่สำเร็จ
-        return;
-      }
-
-      // จัดเรียง categories ให้ตรงกับลำดับของ sortedIds
-      const sortedCategories = sortedIds
-        .map((id) => Categories.find((s) => s.id === Number(id)))
-        .filter(Boolean); // กรองค่าที่ undefined ออก
-
-      setTopCategories(sortedCategories); // เซ็ต state ให้ topCategories
+      if (error) console.error("Error fetching categories:", error);
+      else setTopCategories(data || []);
     };
 
     fetchTopCategories(); // เรียกฟังก์ชันตอนโหลดครั้งแรก
@@ -58,7 +25,8 @@ function Home({ searchTerm }) { // รับ props ที่เป็น searchT
   return (
     <>
       <Head>
-        <title>AskIt</title> {/* ตั้งชื่อหน้าในแท็บของเบราว์เซอร์ */}
+        <title>AskIt — Ask, share, and discover</title>
+        <meta name="description" content="Ask questions, share ideas, and discover conversations in the AskIt community." />
       </Head>
 
       <div className="mx-auto my-7 max-w-7xl px-4"> {/* คอนเทนเนอร์หลักของหน้า */}
@@ -66,10 +34,10 @@ function Home({ searchTerm }) { // รับ props ที่เป็น searchT
 
         <div className="mt-5 flex flex-col lg:flex-row gap-6"> {/* แบ่ง layout เป็นสองฝั่ง */}
           <div className="flex-1"> {/* พื้นที่ฝั่งซ้ายสำหรับโพสต์ */}
-            <Feed searchTerm={searchTerm} /> {/* แสดงโพสต์ทั้งหมดหรือที่ค้นหา */}
+            <Feed />
           </div>
 
-          <div className="sticky top-36 h-fit w-full max-w-sm rounded-md border border-gray-300 bg-white p-4 lg:block hidden"> {/* กล่องฝั่งขวาแสดง top categories */}
+          <div className="sticky top-36 hidden h-fit w-full max-w-sm rounded-md border border-slate-300 bg-white p-4 text-slate-900 shadow-sm lg:block"> {/* กล่องฝั่งขวาแสดง top categories */}
             <p className="text-md mb-3 font-bold">Top Categories</p>
             <div>
               {topCategories.map((Categories, i) => (

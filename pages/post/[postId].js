@@ -1,20 +1,21 @@
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import Post from "../../components/Post";
 import Avatar from "../../components/Avatar";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import TimeAgo from "react-timeago";
+import RelativeTime from "../../components/RelativeTime";
 import { Jelly } from "@uiball/loaders";
 import Head from "next/head";
 import supabase from "../../lib/supabaseClient";
+import { useAuth } from "../../contexts/AuthContext";
 
 function PostPage() {
   const router = useRouter(); // ใช้เข้าถึง URL params
-  const { data: session } = useSession(); // ดึง session ของผู้ใช้
+  const { user } = useAuth();
   const [post, setPost] = useState(null); // state เก็บข้อมูลโพสต์
   const [loading, setLoading] = useState(true); // state สำหรับสถานะโหลด
+  const [loadError, setLoadError] = useState("");
 
   const {
     register,
@@ -27,12 +28,13 @@ function PostPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("post")
-      .select("*, comment(*), categories(*)") // ดึงข้อมูลโพสต์ พร้อม comment และ category
+      .select("*, comment(*, profiles!comment_user_id_fkey(display_name, avatar_url)), categories(*), profiles!post_user_id_fkey(id, display_name, avatar_url), vote(user_id, upvote)")
       .eq("id", router.query.postId) // filter จาก postId ที่ได้จาก URL
       .single(); // เอาแค่ตัวเดียว
 
     if (error) {
       console.error("Error fetching post:", error);
+      setLoadError("This post could not be found.");
     } else {
       setPost({
         ...data,
@@ -58,7 +60,8 @@ function PostPage() {
     const { error } = await supabase.from("comment").insert([
       {
         post_id: router.query.postId, // เชื่อมกับโพสต์นี้
-        username: session?.user?.name,
+        user_id: user?.id,
+        username: user?.user_metadata?.full_name || user?.email,
         text: formData.comment,
       },
     ]);
@@ -72,7 +75,7 @@ function PostPage() {
     }
   };
 
-  if (loading || !post) {
+  if (loading) {
     return (
       <div className="flex w-full items-center justify-center p-10 text-xl">
         <Jelly size={50} color="#9C5BCC" /> {/* แสดง spinner ระหว่างโหลด */}
@@ -80,18 +83,25 @@ function PostPage() {
     );
   }
 
+  if (loadError || !post) {
+    return <main className="mx-auto max-w-5xl p-10 text-center text-red-500">{loadError || "Post not found."}</main>;
+  }
+
   return (
     <div className="mx-auto my-7 max-w-5xl">
       <Head>
-        <title>AskIt</title>
+          <title>{post.title} | AskIt</title>
+          <meta name="description" content={(post.body || post.title).slice(0, 160)} />
+          <meta property="og:title" content={post.title} />
+          <meta property="og:description" content={(post.body || post.title).slice(0, 160)} />
       </Head>
 
       <Post post={post} /> {/* แสดงโพสต์ */}
 
       {/* กล่องสำหรับพิมพ์ comment */}
-      <div className="-mt-1 rounded-b-md border border-t-0 border-gray-300 bg-white p-5 pl-16">
+      <div className="-mt-1 rounded-b-md border border-t-0 border-slate-300 bg-white p-5 pl-16 text-slate-900">
         <p className="text-sm">
-          Comment as <span className="text-red-500">{session?.user?.name}</span>
+          Comment as <span className="text-red-500">{user?.user_metadata?.full_name || user?.email || "guest"}</span>
         </p>
 
         <form
@@ -100,10 +110,10 @@ function PostPage() {
         >
           <textarea
             {...register("comment", { required: true })}
-            disabled={!session}
-            className="h-24 rounded-md border border-gray-200 p-2 pl-4 outline-none disabled:bg-gray-50"
+            disabled={!user}
+            className="h-24 rounded-md border border-slate-300 bg-white p-2 pl-4 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-purple-500 disabled:bg-slate-100"
             placeholder={
-              session ? "What are your thoughts?" : "Please sign in to comment"
+              user ? "What are your thoughts?" : "Please sign in to comment"
             }
           />
 
@@ -112,7 +122,7 @@ function PostPage() {
           )}
 
           <button
-            disabled={!session}
+            disabled={!user}
             type="submit"
             className="rounded-full bg-red-500 p-3 font-semibold text-white disabled:bg-gray-200"
           >
@@ -122,7 +132,7 @@ function PostPage() {
       </div>
 
       {/* แสดงรายการ comment */}
-      <div className="-my-5 rounded-b-md border border-t-0 border-gray-300 bg-white py-5 px-10">
+      <div className="-my-5 rounded-b-md border border-t-0 border-slate-300 bg-white px-10 py-5 text-slate-900">
         <hr className="py-2" />
 
         {Array.isArray(post?.comments) && post.comments.length === 0 && (
@@ -139,14 +149,14 @@ function PostPage() {
             >
               <hr className="absolute top-10 left-7 z-0 h-16 border" />
               <div className="z-50">
-                <Avatar seed={comment.username} /> {/* แสดง avatar ของผู้คอมเมนต์ */}
+                <Avatar seed={comment.profiles?.display_name || comment.username} />
               </div>
               <div className="flex flex-col">
                 <p className="py-2 text-xs text-gray-400">
-                  <span className="font-semibold text-gray-600">
-                    {comment.username}
+                  <span className="font-semibold text-slate-600">
+                    {comment.profiles?.display_name || comment.username}
                   </span>{" "}
-                  • <TimeAgo date={comment.created_at} /> {/* แสดงเวลาย้อนหลัง */}
+                  • <RelativeTime date={comment.created_at} />
                 </p>
                 <p>{comment.text}</p> {/* แสดงข้อความคอมเมนต์ */}
               </div>

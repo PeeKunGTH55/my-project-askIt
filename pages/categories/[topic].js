@@ -14,11 +14,12 @@ function categories() {
   return (
     <div className="h-24 bg-purple-300 p-8"> {/* พื้นหลังส่วน header สีม่วง */}
       <Head>
-        <title>AskIt</title>
+        <title>{topic ? `${topic} | AskIt` : "Category | AskIt"}</title>
+        <meta name="description" content={`Explore posts in ${topic || "this category"} on AskIt.`} />
       </Head>
 
       {/* กล่องแสดงข้อมูล category (avatar + ชื่อ) */}
-      <div className="-mx-8 mt-10 bg-white">
+      <div className="-mx-8 mt-10 bg-white text-slate-900">
         <div className="mx-auto flex max-w-5xl items-center space-x-4 pb-3">
           <div className="-mt-5">
             <Avatar seed={topic} large /> {/* แสดง avatar ขนาดใหญ่ตามชื่อ topic */}

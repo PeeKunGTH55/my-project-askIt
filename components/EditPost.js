@@ -12,16 +12,22 @@ export default function EditPost({ post, onClose, onPostUpdated }) {
 
   // ✅ ฟังก์ชันบันทึกข้อมูลเมื่อกด Save
   const handleSave = async () => {
+    const nextPost = {
+      title: title.trim().slice(0, 200),
+      body: body?.trim().slice(0, 20000) || null,
+      image: image?.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
     const { error } = await supabase
       .from("post")
-      .update({ title, body, image }) // อัปเดตข้อมูลโพสต์
+      .update(nextPost)
       .eq("id", post.id); // เฉพาะโพสต์ที่มี id นี้
 
     if (error) {
       toast.error("Failed to update post"); // ❌ ถ้ามี error
     } else {
       toast.success("Post updated!"); // ✅ แจ้งเตือนว่าอัปเดตสำเร็จ
-      onPostUpdated(); // ✅ เรียกฟังก์ชันจาก parent เพื่อรีเฟรชโพสต์
+      onPostUpdated(nextPost);
       onClose(); // ✅ ปิด modal
     }
   };
@@ -33,7 +39,7 @@ export default function EditPost({ post, onClose, onPostUpdated }) {
       className="fixed inset-0 z-50 overflow-y-auto"
     >
       <div className="flex items-center justify-center min-h-screen px-4">
-        <Dialog.Panel className="bg-white p-6 rounded-md w-full max-w-md shadow-lg">
+        <Dialog.Panel className="w-full max-w-md rounded-md bg-white p-6 text-slate-900 shadow-lg ring-1 ring-black/10">
           {/* ✅ Title */}
           <Dialog.Title className="text-lg font-bold mb-4">
             Edit Post
@@ -41,7 +47,7 @@ export default function EditPost({ post, onClose, onPostUpdated }) {
 
           {/* ✅ Input สำหรับแก้ไข title */}
           <input
-            className="w-full mb-2 border px-3 py-2 rounded"
+            className="mb-2 w-full rounded border border-slate-300 bg-white px-3 py-2 text-slate-900"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Title"
@@ -49,7 +55,7 @@ export default function EditPost({ post, onClose, onPostUpdated }) {
 
           {/* ✅ Textarea สำหรับแก้ไข body */}
           <textarea
-            className="w-full mb-2 border px-3 py-2 rounded"
+            className="mb-2 w-full rounded border border-slate-300 bg-white px-3 py-2 text-slate-900"
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Body"
@@ -57,7 +63,7 @@ export default function EditPost({ post, onClose, onPostUpdated }) {
 
           {/* ✅ Input สำหรับแก้ไข image URL */}
           <input
-            className="w-full mb-2 border px-3 py-2 rounded"
+            className="mb-2 w-full rounded border border-slate-300 bg-white px-3 py-2 text-slate-900"
             value={image || ""}
             onChange={(e) => setImage(e.target.value)}
             placeholder="Image URL"
@@ -74,7 +80,7 @@ export default function EditPost({ post, onClose, onPostUpdated }) {
 
           {/* ✅ ปุ่ม Cancel / Save */}
           <div className="flex justify-end space-x-2">
-            <button onClick={onClose} className="text-gray-500">
+            <button onClick={onClose} className="text-slate-500">
               Cancel
             </button>
             <button

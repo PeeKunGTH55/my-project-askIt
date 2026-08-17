@@ -5,7 +5,7 @@ import Link from "next/link";
 //  Component แสดงหมวดหมู่แต่ละอันใน Top Categories
 function CategoriesRow({ index, topic }) {
   return (
-    <div className="flex items-center space-x-2 border-t bg-white px-4 py-2 last-b">
+    <div className="flex items-center space-x-2 border-t border-slate-200 bg-white px-4 py-2 text-slate-800 last-b">
       {/*  แสดงลำดับอันดับ เช่น 1, 2, 3... */}
       <p>{index + 1}</p>
 

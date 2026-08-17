@@ -1,30 +1,51 @@
 import Image from "next/image";
-import { useState } from "react";
 import {
   ChevronDownIcon,
   MagnifyingGlassIcon,
+  BellIcon,
 } from "@heroicons/react/24/solid";
 import { useRouter } from "next/router";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import Link from "next/link";
+import supabase from "../lib/supabaseClient";
 
 const LOGO_SRC =
-  "https://askit-project.vercel.app/_next/static/media/ASKIT.ea62f01f.svg";
+  "https://cdn.discordapp.com/attachments/1083401978698276975/1538837423281274904/image.png?ex=6a842187&is=6a82d007&hm=703093e76b88858a43879997ee43e35b6634874350ebe6f4dbb669fcb32735b8&";
 
-function Header({ onSearch }) {
-  const { data: session } = useSession();
+function Header() {
+  const { user, loading, signIn, signOut } = useAuth();
   const [term, setTerm] = useState("");
+  const [unread, setUnread] = useState(0);
   const router = useRouter();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSearch?.(term);
+    const query = term.trim();
+    if (query) router.push(`/search?q=${encodeURIComponent(query)}`);
+    else router.push("/");
   };
 
   const handleLogoClick = () => {
     setTerm("");
-    onSearch?.("");
     router.push("/");
   };
+
+  const displayName =
+    user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email;
+
+  useEffect(() => {
+    if (!user) {
+      setUnread(0);
+      return;
+    }
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("recipient_id", user.id)
+      .is("read_at", null)
+      .then(({ count }) => setUnread(count || 0));
+  }, [user]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/80 backdrop-blur-md">
@@ -39,7 +60,7 @@ function Header({ onSearch }) {
           <Image
             src={LOGO_SRC}
             alt="AskIt"
-            width={96}
+            width={60}
             height={40}
             className="object-contain"
             priority
@@ -58,35 +79,39 @@ function Header({ onSearch }) {
             onChange={(e) => setTerm(e.target.value)}
             type="search"
             placeholder="Search by title or category"
+            aria-label="Search posts"
             className="h-full w-full min-w-0 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
           />
         </form>
 
         {/* Auth button */}
-        {session ? (
-          <button
-            type="button"
-            onClick={() => signOut()}
-            className="hidden h-10 shrink-0 items-center gap-2 rounded-full border border-gray-200 bg-white pl-2 pr-3 transition-all hover:border-gray-300 hover:shadow-sm lg:flex"
-          >
-            <img
-              src="/google-icon.png"
-              alt=""
-              className="h-6 w-6 shrink-0 rounded-full"
-            />
-            <div className="flex min-w-0 flex-col text-left text-xs leading-tight">
-              <span className="truncate font-medium text-gray-900">
-                {session.user?.name}
-              </span>
-              <span className="text-gray-500">Sign out</span>
-            </div>
-            <ChevronDownIcon className="h-4 w-4 shrink-0 text-gray-400" />
-          </button>
+        {!loading && user ? (
+          <div className="flex items-center gap-2">
+            <Link href="/notifications" className="relative rounded-full p-2 hover:bg-slate-100" aria-label={`${unread} unread notifications`}>
+              <BellIcon className="h-5 w-5" />
+              {unread > 0 && <span className="absolute right-0 top-0 min-w-4 rounded-full bg-red-500 px-1 text-center text-[10px] text-white">{unread > 99 ? "99+" : unread}</span>}
+            </Link>
+            <Link
+              href={`/user/${user.id}`}
+              className="hidden max-w-32 truncate text-sm font-medium text-slate-700 hover:text-purple-600 sm:block"
+            >
+              {displayName}
+            </Link>
+            <button
+              type="button"
+              onClick={signOut}
+              className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-gray-200 bg-white px-2 transition-all hover:border-gray-300 hover:shadow-sm sm:pr-3"
+            >
+              <img src="/google-icon.png" alt="" className="h-6 w-6 shrink-0 rounded-full" />
+              <span className="hidden text-xs text-slate-500 sm:block">Sign out</span>
+              <ChevronDownIcon className="hidden h-4 w-4 shrink-0 text-gray-400 sm:block" />
+            </button>
+          </div>
         ) : (
           <button
             type="button"
-            onClick={() => signIn()}
-            className="hidden h-10 shrink-0 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm lg:flex"
+            onClick={signIn}
+            className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm"
           >
             <img
               src="/google-icon.png"
