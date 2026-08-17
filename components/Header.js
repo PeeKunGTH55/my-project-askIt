@@ -8,7 +8,7 @@ import { useRouter } from "next/router";
 import { signIn, signOut, useSession } from "next-auth/react";
 
 const LOGO_SRC =
-  "https://askit-project.vercel.app/_next/static/media/ASKIT.ea62f01f.svg";
+  "https://cdn.discordapp.com/attachments/1083401978698276975/1538837423281274904/image.png?ex=6a842187&is=6a82d007&hm=703093e76b88858a43879997ee43e35b6634874350ebe6f4dbb669fcb32735b8&";
 
 function Header({ onSearch }) {
   const { data: session } = useSession();
@@ -39,13 +39,12 @@ function Header({ onSearch }) {
           <Image
             src={LOGO_SRC}
             alt="AskIt"
-            width={96}
+            width={40}
             height={40}
             className="object-contain"
             priority
-          />
+            />
         </button>
-
         {/* Search */}
         <form
           onSubmit={handleSubmit}
