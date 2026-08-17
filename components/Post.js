@@ -71,7 +71,7 @@ function Post({ post }) {
   const displayVotes = () => {
     if (!votes || votes.length === 0) return 0;
     const total = votes.reduce((acc, v) => acc + (v.upvote ? 1 : -1), 0);
-    return total === 0 ? (votes[0]?.upvote ? 1 : -1) : total;
+    return total;
   };
 
   return (
@@ -201,7 +201,7 @@ function Post({ post }) {
             <div className="postButtons">
               <ChatBubbleBottomCenterIcon className="h-6 w-6" />
               <Link href={`/post/${post.id}`}>
-                <p>
+                <p> 
                   {Array.isArray(post.comments)
                     ? post.comments.length
                     : post.comments || 0}{" "}

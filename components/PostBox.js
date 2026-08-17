@@ -12,7 +12,7 @@ function PostBox({ categories }) {
   const router = useRouter(); // ใช้สำหรับ reload หน้า
   const [imageBoxOpen, setImageBoxOpen] = useState(false); // ควบคุมการเปิด/ปิดช่องใส่รูปภาพ
 
-  // ✅ ดึงฟังก์ชันจาก react-hook-form
+  // ดึงฟังก์ชันจาก react-hook-form
   const {
     register,
     handleSubmit,
@@ -21,7 +21,7 @@ function PostBox({ categories }) {
     formState: { errors },
   } = useForm();
 
-  // ✅ ฟังก์ชันเมื่อผู้ใช้ submit ฟอร์ม
+  // ฟังก์ชันเมื่อผู้ใช้ submit ฟอร์ม
   const onSubmit = async (formData) => {
     const notification = toast.loading("Creating new post..."); // แจ้งเตือนกำลังโพสต์
 
@@ -95,7 +95,7 @@ function PostBox({ categories }) {
             session
               ? categories
                 ? `Create a post in ${categories}`
-                : "Create a post by entering a title!"
+                : "Create a  post by entering a title!"
               : "Sign in to post"
           }
         />

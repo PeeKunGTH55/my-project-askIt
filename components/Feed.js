@@ -30,7 +30,7 @@ function Feed({ searchTerm, topic }) {
 
       let filtered = data;
 
-      // ✅ กรองตาม topic ก่อนถ้ามี (ใช้สำหรับหน้า /categories/[topic])
+      // กรองตาม topic ก่อนถ้ามี (ใช้สำหรับหน้า /categories/[topic])
       if (topic) {
         filtered = data.filter(
           (post) =>
