@@ -92,7 +92,7 @@ function Header({ onSearch }) {
               alt=""
               className="h-5 w-5 shrink-0"
             />
-            <span>Sign in</span>
+            <span>Sign ins</span>
           </button>
         )}
       </div>
